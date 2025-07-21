@@ -16,6 +16,7 @@ const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete, onToggle
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Name</th>
+            <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Username</th>
             <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Email</th>
             <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Role</th>
             <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">Status</th>
@@ -26,6 +27,7 @@ const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete, onToggle
           {users.map((user) => (
             <tr key={user.id}>
               <td className="px-6 py-4 whitespace-nowrap">{user.first_name} {user.last_name}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">@{user.username}</td>
               <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
               <td className="px-6 py-4 whitespace-nowrap">{user.role.name}</td>
               <td className="px-6 py-4 whitespace-nowrap">

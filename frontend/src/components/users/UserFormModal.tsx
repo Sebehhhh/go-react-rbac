@@ -6,14 +6,26 @@ import { z } from 'zod';
 import { User } from '../../types/user';
 import { useRoles } from '../../hooks/useRoles';
 
-const userSchema = z.object({
+const createUserSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email(),
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   role_id: z.preprocess((val) => Number(val), z.number().positive('Role is required')),
 });
 
-type UserFormInputs = z.infer<typeof userSchema>;
+const updateUserSchema = z.object({
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
+  email: z.string().email(),
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  role_id: z.preprocess((val) => Number(val), z.number().positive('Role is required')),
+});
+
+type CreateUserInputs = z.infer<typeof createUserSchema>;
+type UpdateUserInputs = z.infer<typeof updateUserSchema>;
+type UserFormInputs = CreateUserInputs & { password?: string };
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -24,22 +36,43 @@ interface UserFormModalProps {
 
 const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, user, onSave }) => {
   const { roles } = useRoles();
+  
+  // Use different schema for create vs edit mode
+  const schema = user ? updateUserSchema : createUserSchema;
+
   const { register, handleSubmit, formState: { errors }, reset } = useForm<UserFormInputs>({
-    resolver: zodResolver(userSchema),
+    resolver: zodResolver(schema),
   });
 
   useEffect(() => {
     if (isOpen) {
       if (user) {
-        reset({ ...user, role_id: user.role.id });
+        reset({ 
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          username: user.username,
+          password: '', // Don't pre-fill password for editing
+          role_id: user.role.id 
+        });
       } else {
-        reset({ first_name: '', last_name: '', email: '', role_id: 0 });
+        reset({ 
+          first_name: '', 
+          last_name: '', 
+          email: '', 
+          username: '',
+          password: '',
+          role_id: 0 
+        });
       }
     }
   }, [user, isOpen, reset]);
 
   const onSubmit = (data: UserFormInputs) => {
-    onSave(data, user ? user.id : null);
+    // For edit mode, remove password field if empty
+    const submitData = user && !data.password ? 
+      { ...data, password: undefined } : data;
+    onSave(submitData, user ? user.id : null);
   };
 
   return (
@@ -71,6 +104,19 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ isOpen, onClose, user, on
                     <input id="email" type="email" {...register('email')} className="w-full px-3 py-2 mt-1 border rounded-md" />
                     {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
                   </div>
+                  <div>
+                    <label htmlFor="username">Username</label>
+                    <input id="username" {...register('username')} className="w-full px-3 py-2 mt-1 border rounded-md" />
+                    {errors.username && <p className="text-sm text-red-500">{errors.username.message}</p>}
+                  </div>
+                  {!user && (
+                    <div>
+                      <label htmlFor="password">Password</label>
+                      <input id="password" type="password" {...register('password')} className="w-full px-3 py-2 mt-1 border rounded-md" />
+                      {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+                      <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                    </div>
+                  )}
                   <div>
                     <label htmlFor="role_id">Role</label>
                     <select id="role_id" {...register('role_id')} className="w-full px-3 py-2 mt-1 border rounded-md">
