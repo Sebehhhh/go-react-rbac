@@ -25,9 +25,9 @@ func NewUserService(rbacService *RBACService) *UserService {
 
 func (s *UserService) GetUsers(page, limit int, search, sortBy, sortOrder string) (*models.UserListResponse, error) {
 	offset := (page - 1) * limit
-	
+
 	query := database.DB.Model(&models.User{}).Preload("Role")
-	
+
 	if search != "" {
 		searchTerm := "%" + strings.ToLower(search) + "%"
 		query = query.Where(
@@ -35,34 +35,34 @@ func (s *UserService) GetUsers(page, limit int, search, sortBy, sortOrder string
 			searchTerm, searchTerm, searchTerm, searchTerm,
 		)
 	}
-	
+
 	if sortBy == "" {
 		sortBy = "created_at"
 	}
 	if sortOrder == "" {
 		sortOrder = "desc"
 	}
-	
+
 	orderClause := sortBy + " " + sortOrder
 	query = query.Order(orderClause)
-	
+
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		return nil, err
 	}
-	
+
 	var users []models.User
 	if err := query.Offset(offset).Limit(limit).Find(&users).Error; err != nil {
 		return nil, err
 	}
-	
+
 	userResponses := make([]models.UserResponse, len(users))
 	for i, user := range users {
 		userResponses[i] = *user.ToResponse()
 	}
-	
+
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
-	
+
 	return &models.UserListResponse{
 		Users:      userResponses,
 		Total:      total,
@@ -229,25 +229,25 @@ func (s *UserService) DeactivateUser(id uint) (*models.User, error) {
 
 func (s *UserService) GetUserActivityLogs(userID uint, page, limit int) (*models.ActivityLogListResponse, error) {
 	offset := (page - 1) * limit
-	
+
 	var total int64
 	if err := database.DB.Model(&models.ActivityLog{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
 		return nil, err
 	}
-	
+
 	var activityLogs []models.ActivityLog
 	if err := database.DB.Preload("User").Where("user_id = ?", userID).
 		Order("created_at desc").Offset(offset).Limit(limit).Find(&activityLogs).Error; err != nil {
 		return nil, err
 	}
-	
+
 	activities := make([]models.ActivityLogResponse, len(activityLogs))
 	for i, log := range activityLogs {
 		activities[i] = *log.ToResponse()
 	}
-	
+
 	totalPages := int(math.Ceil(float64(total) / float64(limit)))
-	
+
 	return &models.ActivityLogListResponse{
 		Activities: activities,
 		Total:      total,

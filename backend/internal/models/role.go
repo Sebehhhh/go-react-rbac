@@ -8,7 +8,7 @@ import (
 
 type Role struct {
 	ID           uint           `json:"id" gorm:"primarykey"`
-	Name         string         `json:"name" gorm:"uniqueIndex;not null" validate:"required,min=2,max=50"`
+	Name         string         `json:"name" gorm:"type:varchar(50);uniqueIndex;not null" validate:"required,min=2,max=50"`
 	Description  string         `json:"description" gorm:"type:text"`
 	IsSystemRole bool           `json:"is_system_role" gorm:"default:false"`
 	CreatedAt    time.Time      `json:"created_at"`

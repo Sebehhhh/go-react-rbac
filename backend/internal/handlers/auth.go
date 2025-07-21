@@ -10,12 +10,14 @@ import (
 )
 
 type AuthHandler struct {
-	authService *services.AuthService
+	authService     services.AuthService
+	passwordService *services.PasswordService
 }
 
-func NewAuthHandler(authService *services.AuthService) *AuthHandler {
+func NewAuthHandler(authService services.AuthService) *AuthHandler {
 	return &AuthHandler{
-		authService: authService,
+		authService:     authService,
+		passwordService: services.NewPasswordService(),
 	}
 }
 
@@ -147,4 +149,62 @@ func (h *AuthHandler) UpdatePassword(c *fiber.Ctx) error {
 	user.PasswordHash = hashedPassword
 
 	return utils.SendSuccess(c, fiber.StatusOK, "Password updated successfully", nil)
+}
+
+// ForgotPassword initiates the password reset process.
+// @Summary Request password reset
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body models.ForgotPasswordInput true "Forgot Password Payload"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
+	var input models.ForgotPasswordRequest
+	if err := c.BodyParser(&input); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "invalid_request", err.Error())
+	}
+
+	// Basic validation
+	if input.Email == "" {
+		return utils.SendError(c, fiber.StatusBadRequest, "validation_error", "Email is required")
+	}
+
+	_, err := h.passwordService.CreateResetToken(input.Email)
+	if err != nil {
+		// To prevent user enumeration, always return a success-like response
+		return utils.SendSuccess(c, fiber.StatusOK, "If a matching account was found, a password reset link has been sent.", nil)
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "If a matching account was found, a password reset link has been sent.", nil)
+}
+
+// ResetPassword resets the user's password using a valid token.
+// @Summary Reset password
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param body body models.ResetPasswordInput true "Reset Password Payload"
+// @Success 200 {object} utils.Response
+// @Failure 400 {object} utils.Response
+// @Failure 500 {object} utils.Response
+// @Router /auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
+	var input models.ResetPasswordRequest
+	if err := c.BodyParser(&input); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "invalid_request", err.Error())
+	}
+
+	// Basic validation
+	if input.Token == "" || input.NewPassword == "" {
+		return utils.SendError(c, fiber.StatusBadRequest, "validation_error", "Token and new password are required")
+	}
+
+	if err := h.passwordService.ResetPassword(input.Token, input.NewPassword); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "reset_failed", err.Error())
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Password has been reset successfully.", nil)
 }

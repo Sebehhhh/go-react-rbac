@@ -155,7 +155,7 @@ func (s *RoleService) AssignPermissions(roleID uint, permissionIDs []uint) error
 	return nil
 }
 
-func (s *RoleService) GetRolePermissions(roleID uint) ([]models.Permission, error) {
+func (s *RoleService) GetRolePermissions(roleID uint) ([]*models.Permission, error) {
 	var role models.Role
 	if err := database.DB.Preload("Permissions").First(&role, roleID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -46,7 +46,7 @@ type JWTClaims struct {
 type PasswordResetToken struct {
 	ID        uint      `json:"id" gorm:"primarykey"`
 	UserID    uint      `json:"user_id" gorm:"not null"`
-	Token     string    `json:"token" gorm:"not null;uniqueIndex"`
+	Token     string    `json:"token" gorm:"type:varchar(255);not null;uniqueIndex"`
 	ExpiresAt time.Time `json:"expires_at" gorm:"not null"`
 	UsedAt    *time.Time `json:"used_at"`
 	CreatedAt time.Time `json:"created_at"`

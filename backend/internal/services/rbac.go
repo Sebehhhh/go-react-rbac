@@ -3,19 +3,22 @@ package services
 import (
 	"fmt"
 
-	"rbac-system/backend/internal/database"
+	"gorm.io/gorm"
+
 	"rbac-system/backend/internal/models"
 )
 
-type RBACService struct{}
+type RBACService struct {
+	DB *gorm.DB
+}
 
-func NewRBACService() *RBACService {
-	return &RBACService{}
+func NewRBACService(db *gorm.DB) *RBACService {
+	return &RBACService{DB: db}
 }
 
 func (s *RBACService) CheckPermission(userID uint, resource, action string) (bool, error) {
 	var user models.User
-	if err := database.DB.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
+	if err := s.DB.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
 		return false, err
 	}
 
@@ -34,9 +37,9 @@ func (s *RBACService) CheckPermission(userID uint, resource, action string) (boo
 	return false, nil
 }
 
-func (s *RBACService) GetUserPermissions(userID uint) ([]models.Permission, error) {
+func (s *RBACService) GetUserPermissions(userID uint) ([]*models.Permission, error) {
 	var user models.User
-	if err := database.DB.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
+	if err := s.DB.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
 		return nil, err
 	}
 
@@ -45,7 +48,7 @@ func (s *RBACService) GetUserPermissions(userID uint) ([]models.Permission, erro
 
 func (s *RBACService) HasRole(userID uint, roleName string) (bool, error) {
 	var user models.User
-	if err := database.DB.Preload("Role").First(&user, userID).Error; err != nil {
+	if err := s.DB.Preload("Role").First(&user, userID).Error; err != nil {
 		return false, err
 	}
 
@@ -54,7 +57,7 @@ func (s *RBACService) HasRole(userID uint, roleName string) (bool, error) {
 
 func (s *RBACService) GetUserRole(userID uint) (*models.Role, error) {
 	var user models.User
-	if err := database.DB.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
+	if err := s.DB.Preload("Role.Permissions").First(&user, userID).Error; err != nil {
 		return nil, err
 	}
 

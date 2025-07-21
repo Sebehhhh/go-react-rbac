@@ -51,12 +51,12 @@ func main() {
 
 	jwtService := utils.NewJWTService(cfg)
 	authService := services.NewAuthService(jwtService)
-	userService := services.NewUserService(services.NewRBACService())
+	userService := services.NewUserService(services.NewRBACService(database.DB))
 	roleService := services.NewRoleService()
 	dashboardService := services.NewDashboardService()
-	rbacService := services.NewRBACService()
+	rbacService := services.NewRBACService(database.DB)
 
-	authHandler := handlers.NewAuthHandler(authService)
+	authHandler := handlers.NewAuthHandler(*authService)
 	userHandler := handlers.NewUserHandler(userService, rbacService)
 	roleHandler := handlers.NewRoleHandler(roleService)
 	dashboardHandler := handlers.NewDashboardHandler(dashboardService)
@@ -68,6 +68,8 @@ func main() {
 	auth.Post("/login", authHandler.Login)
 	auth.Post("/refresh", authHandler.RefreshToken)
 	auth.Post("/logout", middleware.AuthMiddleware(authService, jwtService), authHandler.Logout)
+	auth.Post("/forgot-password", authHandler.ForgotPassword)
+	auth.Post("/reset-password", authHandler.ResetPassword)
 
 	profile := api.Group("/profile")
 	profile.Use(middleware.AuthMiddleware(authService, jwtService))

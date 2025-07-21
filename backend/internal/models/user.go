@@ -8,8 +8,8 @@ import (
 
 type User struct {
 	ID              uint           `json:"id" gorm:"primarykey"`
-	Email           string         `json:"email" gorm:"uniqueIndex;not null" validate:"required,email"`
-	Username        string         `json:"username" gorm:"uniqueIndex;not null" validate:"required,min=3,max=50"`
+	Email           string         `json:"email" gorm:"type:varchar(255);uniqueIndex;not null" validate:"required,email"`
+	Username        string         `json:"username" gorm:"type:varchar(255);uniqueIndex;not null" validate:"required,min=3,max=50"`
 	PasswordHash    string         `json:"-" gorm:"not null"`
 	FirstName       string         `json:"first_name" gorm:"not null" validate:"required,min=1,max=50"`
 	LastName        string         `json:"last_name" gorm:"not null" validate:"required,min=1,max=50"`
@@ -62,6 +62,7 @@ type UserResponse struct {
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	Role            Role       `json:"role"`
+	Permissions     []string   `json:"permissions"`
 }
 
 type UserListResponse struct {
@@ -77,6 +78,14 @@ func (User) TableName() string {
 }
 
 func (u *User) ToResponse() *UserResponse {
+	permissions := []string{}
+	// Ensure Role and Permissions are preloaded
+	if u.Role.Permissions != nil {
+		for _, p := range u.Role.Permissions {
+			permissions = append(permissions, p.Name)
+		}
+	}
+
 	return &UserResponse{
 		ID:              u.ID,
 		Email:           u.Email,
@@ -90,5 +99,6 @@ func (u *User) ToResponse() *UserResponse {
 		CreatedAt:       u.CreatedAt,
 		UpdatedAt:       u.UpdatedAt,
 		Role:            u.Role,
+		Permissions:     permissions,
 	}
 }
