@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '../services/api';
-import { useState } from 'react';
+import { showSuccessAlert, showErrorAlert } from '../utils/alerts';
 
 // Schema for profile update
 const profileSchema = z.object({
@@ -29,8 +29,7 @@ type PasswordFormInputs = z.infer<typeof passwordSchema>;
 
 const ProfilePage = () => {
   const { user, setUser } = useAuthStore();
-  const [profileMessage, setProfileMessage] = useState<string | null>(null);
-  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  
 
   const { register: profileRegister, handleSubmit: handleProfileSubmit, formState: { errors: profileErrors, isSubmitting: isProfileSubmitting } } = useForm<ProfileFormInputs>({
     resolver: zodResolver(profileSchema),
@@ -50,9 +49,9 @@ const ProfilePage = () => {
     try {
       const response = await api.put('/profile', data);
       setUser(response.data.data); // Update user in store
-      setProfileMessage('Profile updated successfully!');
+      showSuccessAlert('Profile updated successfully!');
     } catch (error: any) {
-      setProfileMessage(`Failed to update profile: ${error.response?.data?.message || error.message}`);
+      showErrorAlert(error.response?.data?.message || 'Failed to update profile.');
     }
   };
 
@@ -62,10 +61,10 @@ const ProfilePage = () => {
         current_password: data.current_password,
         new_password: data.new_password,
       });
-      setPasswordMessage('Password updated successfully!');
+      showSuccessAlert('Password updated successfully!');
       resetPasswordForm();
     } catch (error: any) {
-      setPasswordMessage(`Failed to change password: ${error.response?.data?.message || error.message}`);
+      showErrorAlert(error.response?.data?.message || 'Failed to change password.');
     }
   };
 
@@ -76,11 +75,7 @@ const ProfilePage = () => {
       {/* Profile Information Section */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Profile Information</h2>
-        {profileMessage && (
-          <div className={`p-3 mb-4 rounded-md ${profileMessage.includes('Failed') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-            {profileMessage}
-          </div>
-        )}
+        
         <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4">
           <div>
             <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">First Name</label>
@@ -115,11 +110,7 @@ const ProfilePage = () => {
       {/* Change Password Section */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Change Password</h2>
-        {passwordMessage && (
-          <div className={`p-3 mb-4 rounded-md ${passwordMessage.includes('Failed') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-            {passwordMessage}
-          </div>
-        )}
+        
         <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4">
           <div>
             <label htmlFor="current_password" className="block text-sm font-medium text-gray-700">Current Password</label>

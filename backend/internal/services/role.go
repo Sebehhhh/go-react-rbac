@@ -43,11 +43,23 @@ func (s *RoleService) CreateRole(req *models.RoleInput) (*models.Role, error) {
 	role := models.Role{
 		Name:         req.Name,
 		Description:  req.Description,
-		IsSystemRole: req.IsSystemRole,
+		IsSystemRole: false, // Only system can create system roles
 	}
 
 	if err := database.DB.Create(&role).Error; err != nil {
 		return nil, err
+	}
+
+	// Assign permissions if provided
+	if len(req.PermissionIDs) > 0 {
+		var permissions []models.Permission
+		if err := database.DB.Where("id IN ?", req.PermissionIDs).Find(&permissions).Error; err != nil {
+			return nil, err
+		}
+		
+		if err := database.DB.Model(&role).Association("Permissions").Append(&permissions); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := database.DB.Preload("Permissions").First(&role, role.ID).Error; err != nil {
@@ -66,11 +78,15 @@ func (s *RoleService) UpdateRole(id uint, req *models.RoleInput) (*models.Role, 
 		return nil, err
 	}
 
-	if role.IsSystemRole && !req.IsSystemRole {
-		return nil, errors.New("cannot modify system role")
-	}
+	// System roles can be updated, but cannot change IsSystemRole field
+	// Only Super Admin can modify certain system roles
 
 	if req.Name != "" && req.Name != role.Name {
+		// System roles cannot change name to prevent system confusion
+		if role.IsSystemRole {
+			return nil, errors.New("cannot change system role name")
+		}
+		
 		var existingRole models.Role
 		if err := database.DB.Where("name = ? AND id != ?", req.Name, id).First(&existingRole).Error; err == nil {
 			return nil, errors.New("role with this name already exists")
@@ -84,6 +100,20 @@ func (s *RoleService) UpdateRole(id uint, req *models.RoleInput) (*models.Role, 
 
 	if err := database.DB.Save(&role).Error; err != nil {
 		return nil, err
+	}
+
+	// Update permissions if provided
+	if req.PermissionIDs != nil {
+		var permissions []models.Permission
+		if len(req.PermissionIDs) > 0 {
+			if err := database.DB.Where("id IN ?", req.PermissionIDs).Find(&permissions).Error; err != nil {
+				return nil, err
+			}
+		}
+		
+		if err := database.DB.Model(&role).Association("Permissions").Replace(&permissions); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := database.DB.Preload("Permissions").First(&role, role.ID).Error; err != nil {

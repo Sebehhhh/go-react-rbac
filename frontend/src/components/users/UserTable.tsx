@@ -1,4 +1,4 @@
-import { Edit, PowerOff, Power, Trash2 } from 'lucide-react';
+import { Edit, PowerOff, Power, Trash2, Lock } from 'lucide-react';
 import { User } from '../../types/user';
 
 interface UserTableProps {
@@ -6,9 +6,10 @@ interface UserTableProps {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
   onToggleActivate: (user: User) => void;
+  onUpdatePassword: (user: User) => void;
 }
 
-const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete, onToggleActivate }) => {
+const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete, onToggleActivate, onUpdatePassword }) => {
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow">
       <table className="min-w-full divide-y divide-gray-200">
@@ -35,6 +36,9 @@ const UserTable: React.FC<UserTableProps> = ({ users, onEdit, onDelete, onToggle
               <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
                 <button onClick={() => onEdit(user)} className="text-indigo-600 hover:text-indigo-900">
                   <Edit className="w-5 h-5" />
+                </button>
+                <button onClick={() => onUpdatePassword(user)} className="ml-4 text-yellow-600 hover:text-yellow-900">
+                  <Lock className="w-5 h-5" />
                 </button>
                 <button onClick={() => onToggleActivate(user)} className="ml-4 text-gray-600 hover:text-gray-900">
                   {user.is_active ? <PowerOff className="w-5 h-5 text-red-500" /> : <Power className="w-5 h-5 text-green-500" />}

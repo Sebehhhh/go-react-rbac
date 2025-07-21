@@ -279,6 +279,35 @@ func (s *UserService) BulkUserActions(req *BulkActionRequest) error {
 	}
 }
 
+func (s *UserService) UpdatePassword(userID uint, req *models.PasswordUpdateInput) error {
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("user not found")
+		}
+		return err
+	}
+
+	// Verify current password
+	if !utils.CheckPasswordHash(req.CurrentPassword, user.PasswordHash) {
+		return errors.New("current password is incorrect")
+	}
+
+	// Hash new password
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		return errors.New("failed to hash new password")
+	}
+
+	// Update password
+	user.PasswordHash = hashedPassword
+	if err := database.DB.Save(&user).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func parseIntOrDefault(s string, defaultVal int) int {
 	if val, err := strconv.Atoi(s); err == nil {
 		return val

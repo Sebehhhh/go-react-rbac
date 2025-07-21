@@ -20,9 +20,10 @@ type Role struct {
 }
 
 type RoleInput struct {
-	Name         string `json:"name" validate:"required,min=2,max=50"`
-	Description  string `json:"description" validate:"max=500"`
-	IsSystemRole bool   `json:"is_system_role"`
+	Name          string  `json:"name" validate:"required,min=2,max=50"`
+	Description   string  `json:"description" validate:"max=500"`
+	IsSystemRole  bool    `json:"is_system_role"`
+	PermissionIDs []uint  `json:"permission_ids"`
 }
 
 type RoleWithPermissions struct {

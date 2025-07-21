@@ -2,34 +2,38 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 
 interface DashboardStats {
-  totalUsers: number;
-  activeUsers: number;
-  newRegistrations: number;
-  totalRoles: number;
+  total_users: number;
+  active_users: number;
+  inactive_users: number;
+  new_users_today: number;
+  new_users_this_week: number;
+  total_roles: number;
 }
 
 interface RoleDistribution {
-  roleName: string;
-  userCount: number;
+  role_name: string;
+  user_count: number;
 }
 
 interface ActivityLog {
   id: number;
   action: string;
   resource: string;
-  ipAddress: string;
-  userAgent: string;
-  createdAt: string;
-  user: { // Assuming user details are nested
+  ip_address: string;
+  user_agent: string;
+  created_at: string;
+  user: {
     id: number;
     username: string;
     email: string;
+    first_name: string;
+    last_name: string;
   };
 }
 
 interface UserAnalytics {
   date: string;
-  newUsers: number;
+  user_count: number;
 }
 
 interface DashboardData {
@@ -62,11 +66,16 @@ export const useDashboardData = () => {
           api.get('/dashboard/user-analytics'),
         ]);
 
+        console.log('Dashboard Stats Response:', statsRes.data);
+        console.log('Role Distribution Response:', roleDistRes.data);
+        console.log('Recent Activity Response:', recentActivityRes.data);
+        console.log('User Analytics Response:', userAnalyticsRes.data);
+
         setData({
-          stats: statsRes.data.data,
-          roleDistribution: roleDistRes.data.data,
-          recentActivity: recentActivityRes.data.data,
-          userAnalytics: userAnalyticsRes.data.data,
+          stats: statsRes.data?.data || null,
+          roleDistribution: Array.isArray(roleDistRes.data?.data) ? roleDistRes.data.data : [],
+          recentActivity: Array.isArray(recentActivityRes.data?.data) ? recentActivityRes.data.data : [],
+          userAnalytics: Array.isArray(userAnalyticsRes.data?.data) ? userAnalyticsRes.data.data : [],
           isLoading: false,
           error: null,
         });

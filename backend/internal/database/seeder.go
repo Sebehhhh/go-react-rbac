@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -10,6 +11,15 @@ import (
 )
 
 func SeedDatabase(cfg *config.Config) error {
+	// Check if initial seeding has been completed
+	var seedTracker models.SeedTracker
+	if err := DB.Where("seed_name = ? AND is_completed = ?", "initial_seed", true).First(&seedTracker).Error; err == nil {
+		log.Println("Database already seeded, skipping seeding process")
+		return nil
+	}
+
+	log.Println("Starting database seeding process...")
+
 	if err := seedPermissions(); err != nil {
 		return err
 	}
@@ -20,6 +30,15 @@ func SeedDatabase(cfg *config.Config) error {
 
 	if err := seedDefaultAdmin(cfg); err != nil {
 		return err
+	}
+
+	// Mark seeding as completed
+	seedTracker = models.SeedTracker{
+		SeedName:    "initial_seed",
+		IsCompleted: true,
+	}
+	if err := DB.Create(&seedTracker).Error; err != nil {
+		log.Printf("Warning: Failed to mark seeding as completed: %v", err)
 	}
 
 	log.Println("Database seeding completed successfully")
@@ -148,5 +167,53 @@ func seedDefaultAdmin(cfg *config.Config) error {
 	}
 
 	log.Printf("Created default admin user: %s", admin.Email)
+	return nil
+}
+
+// ResetSeedingStatus resets the seeding status - useful for fresh migrations
+func ResetSeedingStatus() error {
+	if err := DB.Where("seed_name = ?", "initial_seed").Delete(&models.SeedTracker{}).Error; err != nil {
+		return fmt.Errorf("failed to reset seeding status: %w", err)
+	}
+	log.Println("Seeding status reset successfully")
+	return nil
+}
+
+// ForceSeedDatabase forces seeding even if already completed
+func ForceSeedDatabase(cfg *config.Config) error {
+	log.Println("Force seeding database...")
+	
+	if err := seedPermissions(); err != nil {
+		return err
+	}
+
+	if err := seedRoles(); err != nil {
+		return err
+	}
+
+	if err := seedDefaultAdmin(cfg); err != nil {
+		return err
+	}
+
+	// Update or create seed tracker
+	var seedTracker models.SeedTracker
+	if err := DB.Where("seed_name = ?", "initial_seed").First(&seedTracker).Error; err != nil {
+		// Create new tracker
+		seedTracker = models.SeedTracker{
+			SeedName:    "initial_seed",
+			IsCompleted: true,
+		}
+		if err := DB.Create(&seedTracker).Error; err != nil {
+			log.Printf("Warning: Failed to mark seeding as completed: %v", err)
+		}
+	} else {
+		// Update existing tracker
+		seedTracker.IsCompleted = true
+		if err := DB.Save(&seedTracker).Error; err != nil {
+			log.Printf("Warning: Failed to update seeding status: %v", err)
+		}
+	}
+
+	log.Println("Force seeding completed successfully")
 	return nil
 }

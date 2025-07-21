@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { useRoles } from '../../hooks/useRoles';
 import RoleTable from '../../components/roles/RoleTable';
 import RoleFormModal from '../../components/roles/RoleFormModal';
+import RoleDetailModal from '../../components/roles/RoleDetailModal';
 import { Role } from '../../types/rbac';
 import api from '../../services/api';
+import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '../../utils/alerts';
 
 const RolesPage = () => {
   const { roles, isLoading, error, mutate } = useRoles();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [detailRole, setDetailRole] = useState<Role | null>(null);
 
   const handleOpenModal = (role: Role | null) => {
     setEditingRole(role);
@@ -21,31 +25,45 @@ const RolesPage = () => {
     setIsModalOpen(false);
   };
 
+  const handleViewDetails = (role: Role) => {
+    setDetailRole(role);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setDetailRole(null);
+    setIsDetailModalOpen(false);
+  };
+
   const handleSave = async (data: any, roleId: number | null) => {
     try {
       if (roleId) {
         await api.put(`/roles/${roleId}`, { name: data.name, description: data.description });
         await api.put(`/roles/${roleId}/permissions`, { permission_ids: data.permission_ids });
+        showSuccessAlert('Role updated successfully!');
       } else {
         const response = await api.post('/roles', { name: data.name, description: data.description });
         if (response.data.data && data.permission_ids && data.permission_ids.length > 0) {
           await api.put(`/roles/${response.data.data.id}/permissions`, { permission_ids: data.permission_ids });
         }
+        showSuccessAlert('Role created successfully!');
       }
       mutate(); // Re-fetch roles
       handleCloseModal();
-    } catch (error) {
-      console.error('Failed to save role:', error);
+    } catch (error: any) {
+      showErrorAlert(error.response?.data?.message || 'Failed to save role.');
     }
   };
 
   const handleDelete = async (role: Role) => {
-    if (window.confirm(`Are you sure you want to delete role ${role.name}?`)) {
+    const confirmed = await showConfirmAlert('Delete Role', `Are you sure you want to delete role ${role.name}?`);
+    if (confirmed) {
       try {
         await api.delete(`/roles/${role.id}`);
         mutate();
-      } catch (error) {
-        console.error('Failed to delete role:', error);
+        showSuccessAlert('Role deleted successfully!');
+      } catch (error: any) {
+        showErrorAlert(error.response?.data?.message || 'Failed to delete role.');
       }
     }
   };
@@ -65,6 +83,7 @@ const RolesPage = () => {
           roles={roles}
           onEdit={handleOpenModal}
           onDelete={handleDelete}
+          onViewDetails={handleViewDetails}
         />
       )}
       <RoleFormModal 
@@ -72,6 +91,11 @@ const RolesPage = () => {
         onClose={handleCloseModal}
         role={editingRole}
         onSave={handleSave}
+      />
+      <RoleDetailModal 
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        role={detailRole}
       />
     </div>
   );

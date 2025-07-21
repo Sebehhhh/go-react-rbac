@@ -86,6 +86,7 @@ func main() {
 	users.Delete("/:id", middleware.RequirePermission(rbacService, "users", "delete"), userHandler.DeleteUser)
 	users.Put("/:id/activate", middleware.RequirePermission(rbacService, "users", "update"), userHandler.ActivateUser)
 	users.Put("/:id/deactivate", middleware.RequirePermission(rbacService, "users", "update"), userHandler.DeactivateUser)
+	users.Put("/:id/password", middleware.SelfOrPermission(rbacService, "users", "update"), userHandler.UpdatePassword)
 	users.Get("/:id/activity", middleware.SelfOrPermission(rbacService, "activity_logs", "read"), userHandler.GetUserActivity)
 	users.Post("/bulk-actions", middleware.RequireRole(rbacService, "Super Admin"), userHandler.BulkActions)
 

@@ -1,5 +1,5 @@
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,6 +23,7 @@ interface RoleFormModalProps {
 
 const RoleFormModal: React.FC<RoleFormModalProps> = ({ isOpen, onClose, role, onSave }) => {
   const { permissions } = usePermissions();
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
   const { register, handleSubmit, formState: { errors }, reset } = useForm<RoleFormInputs>({
     resolver: zodResolver(roleSchema),
   });
@@ -30,17 +31,30 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({ isOpen, onClose, role, on
   useEffect(() => {
     if (isOpen) {
       if (role) {
-        // Fetch current role permissions if editing
-        // For now, just set name and description
-        reset({ name: role.name, description: role.description });
+        const rolePermissionIds = role.permissions?.map(p => p.id) || [];
+        reset({
+          name: role.name,
+          description: role.description,
+        });
+        setSelectedPermissions(rolePermissionIds);
       } else {
-        reset({ name: '', description: '', permission_ids: [] });
+        reset({ name: '', description: '' });
+        setSelectedPermissions([]);
       }
     }
   }, [role, isOpen, reset]);
 
+  const handlePermissionChange = (permissionId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedPermissions(prev => [...prev, permissionId]);
+    } else {
+      setSelectedPermissions(prev => prev.filter(id => id !== permissionId));
+    }
+  };
+
   const onSubmit = (data: RoleFormInputs) => {
-    onSave(data, role ? role.id : null);
+    const formData = { ...data, permission_ids: selectedPermissions };
+    onSave(formData, role ? role.id : null);
   };
 
   return (
@@ -68,19 +82,23 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({ isOpen, onClose, role, on
                   </div>
                   <div>
                     <h4 className="mb-2 text-md font-medium">Permissions</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {permissions && permissions.map(perm => (
-                        <div key={perm.id} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={`perm-${perm.id}`}
-                            value={perm.id}
-                            {...register('permission_ids', { valueAsNumber: true })}
-                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                          />
-                          <label htmlFor={`perm-${perm.id}`} className="ml-2 text-sm text-gray-900">{perm.resource}.{perm.action}</label>
-                        </div>
-                      ))}
+                    <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-3">
+                      <div className="grid grid-cols-1 gap-2">
+                        {permissions && permissions.map(perm => (
+                          <div key={perm.id} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`perm-${perm.id}`}
+                              checked={selectedPermissions.includes(perm.id)}
+                              onChange={(e) => handlePermissionChange(perm.id, e.target.checked)}
+                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <label htmlFor={`perm-${perm.id}`} className="ml-2 text-sm text-gray-900">
+                              <span className="font-medium">{perm.name}</span> - {perm.description}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <div className="mt-6 flex justify-end space-x-2">

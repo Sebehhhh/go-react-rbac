@@ -3,9 +3,9 @@ import api from '../services/api';
 import { Role } from '../types/rbac';
 
 interface RolesResponse {
-  data: {
-    roles: Role[];
-  }
+  success: boolean;
+  message: string;
+  data: Role[];
 }
 
 export const useRoles = () => {
@@ -18,7 +18,11 @@ export const useRoles = () => {
     setError(null);
     try {
       const response = await api.get<RolesResponse>('/roles');
-      setRoles(response.data.data.roles);
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        setRoles(response.data.data);
+      } else {
+        setRoles([]); // Ensure roles is always an array
+      }
     } catch (err) {
       setError('Failed to fetch roles');
       console.error(err);

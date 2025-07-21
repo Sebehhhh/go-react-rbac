@@ -43,6 +43,7 @@ func Migrate() error {
 		&models.Permission{},
 		&models.ActivityLog{},
 		&models.PasswordResetToken{},
+		&models.SeedTracker{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to migrate database: %w", err)

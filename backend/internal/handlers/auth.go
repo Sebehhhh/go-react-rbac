@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"rbac-system/backend/internal/database"
 	"rbac-system/backend/internal/middleware"
 	"rbac-system/backend/internal/models"
 	"rbac-system/backend/internal/services"
@@ -119,6 +120,11 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 		user.LastName = req.LastName
 	}
 
+	// Save changes to database
+	if err := database.DB.Save(user).Error; err != nil {
+		return utils.SendError(c, fiber.StatusInternalServerError, "internal_error", "Failed to update profile")
+	}
+
 	return utils.SendSuccess(c, fiber.StatusOK, "Profile updated successfully", user.ToResponse())
 }
 
@@ -147,6 +153,11 @@ func (h *AuthHandler) UpdatePassword(c *fiber.Ctx) error {
 	}
 
 	user.PasswordHash = hashedPassword
+
+	// Save changes to database
+	if err := database.DB.Save(user).Error; err != nil {
+		return utils.SendError(c, fiber.StatusInternalServerError, "internal_error", "Failed to update password")
+	}
 
 	return utils.SendSuccess(c, fiber.StatusOK, "Password updated successfully", nil)
 }

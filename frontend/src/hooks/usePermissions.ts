@@ -12,8 +12,8 @@ export const usePermissions = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await api.get<{ permissions: Permission[] }>('/permissions');
-        setPermissions(response.data.permissions);
+        const response = await api.get<{ success: boolean; message: string; data: Permission[] }>('/permissions');
+        setPermissions(response.data.data);
       } catch (err) {
         setError('Failed to fetch permissions');
         console.error(err);

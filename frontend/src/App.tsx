@@ -8,7 +8,7 @@ import ProtectedRoute from './guards/ProtectedRoute';
 import ProfilePage from './pages/Profile';
 
 const App = () => {
-  const { isAuthenticated } = useAuthStore.getState();
+  const { isAuthenticated } = useAuthStore();
 
   return (
     <Router>

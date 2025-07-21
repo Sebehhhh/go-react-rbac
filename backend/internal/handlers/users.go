@@ -214,6 +214,42 @@ func (h *UserHandler) BulkActions(c *fiber.Ctx) error {
 	return utils.SendSuccess(c, fiber.StatusOK, "Bulk action completed successfully", nil)
 }
 
+func (h *UserHandler) UpdatePassword(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "invalid_id", "Invalid user ID")
+	}
+
+	currentUserID := middleware.GetUserIDFromContext(c)
+	
+	// Only allow users to update their own password or admin can update any user's password
+	if currentUserID != uint(id) {
+		canManage, err := h.rbacService.CanManageUser(currentUserID, uint(id))
+		if err != nil {
+			return utils.SendError(c, fiber.StatusInternalServerError, "internal_error", "Error checking permissions")
+		}
+		if !canManage {
+			return utils.SendError(c, fiber.StatusForbidden, "forbidden", "Cannot update this user's password")
+		}
+	}
+
+	var req models.PasswordUpdateInput
+	if err := c.BodyParser(&req); err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "invalid_request", "Invalid request body")
+	}
+
+	if err := utils.ValidateStruct(&req); err != nil {
+		return utils.SendValidationError(c, err)
+	}
+
+	err = h.userService.UpdatePassword(uint(id), &req)
+	if err != nil {
+		return utils.SendError(c, fiber.StatusBadRequest, "update_password_failed", err.Error())
+	}
+
+	return utils.SendSuccess(c, fiber.StatusOK, "Password updated successfully", nil)
+}
+
 func parseIntOrDefault(s string, defaultVal int) int {
 	if val, err := strconv.Atoi(s); err == nil {
 		return val

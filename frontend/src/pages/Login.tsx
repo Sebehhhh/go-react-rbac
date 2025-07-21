@@ -12,6 +12,8 @@ const loginSchema = z.object({
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
+import { showSuccessAlert, showErrorAlert } from '../utils/alerts';
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
@@ -24,10 +26,10 @@ const LoginPage = () => {
       const response = await api.post('/auth/login', data);
       const { access_token, refresh_token, user } = response.data.data;
       login(access_token, refresh_token, user);
+      showSuccessAlert('Login successful!');
       navigate('/dashboard');
-    } catch (error) {
-      console.error('Login failed:', error);
-      // You can add user-facing error messages here
+    } catch (error: any) {
+      showErrorAlert(error.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 

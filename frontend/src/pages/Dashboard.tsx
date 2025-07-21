@@ -24,7 +24,7 @@ const DashboardPage = () => {
         <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-500">Total Users</p>
-            <p className="text-3xl font-bold text-gray-900">{stats?.totalUsers || 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{stats?.total_users || 0}</p>
           </div>
           <div className="p-3 bg-blue-100 rounded-full text-blue-600">
             <Users className="w-6 h-6" />
@@ -33,7 +33,7 @@ const DashboardPage = () => {
         <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-500">Active Users</p>
-            <p className="text-3xl font-bold text-gray-900">{stats?.activeUsers || 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{stats?.active_users || 0}</p>
           </div>
           <div className="p-3 bg-green-100 rounded-full text-green-600">
             <UserPlus className="w-6 h-6" />
@@ -42,7 +42,7 @@ const DashboardPage = () => {
         <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-500">New Registrations</p>
-            <p className="text-3xl font-bold text-gray-900">{stats?.newRegistrations || 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{stats?.new_users_today || 0}</p>
           </div>
           <div className="p-3 bg-yellow-100 rounded-full text-yellow-600">
             <UserPlus className="w-6 h-6" />
@@ -51,7 +51,7 @@ const DashboardPage = () => {
         <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-500">Total Roles</p>
-            <p className="text-3xl font-bold text-gray-900">{stats?.totalRoles || 0}</p>
+            <p className="text-3xl font-bold text-gray-900">{stats?.total_roles || 0}</p>
           </div>
           <div className="p-3 bg-red-100 rounded-full text-red-600">
             <Shield className="w-6 h-6" />
@@ -73,9 +73,9 @@ const DashboardPage = () => {
                   labelLine={false}
                   outerRadius={100}
                   fill="#8884d8"
-                  dataKey="userCount"
-                  nameKey="roleName"
-                  label={({ roleName, percent }) => `${roleName} (${(percent * 100).toFixed(0)}%)`}
+                  dataKey="user_count"
+                  nameKey="role_name"
+                  label={({ role_name, percent }) => `${role_name} (${(percent * 100).toFixed(0)}%)`}
                 >
                   {roleDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -101,7 +101,7 @@ const DashboardPage = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="newUsers" fill="#8884d8" name="New Users" />
+                <Bar dataKey="user_count" fill="#8884d8" name="New Users" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -118,9 +118,9 @@ const DashboardPage = () => {
             {recentActivity.map((activity) => (
               <li key={activity.id} className="py-3 flex justify-between items-center">
                 <span className="text-gray-700">
-                  User '<span className="font-medium">{activity.user?.username || activity.user?.email || 'Unknown'}</span>' {activity.action} {activity.resource} from {activity.ipAddress}
+                  User '<span className="font-medium">{activity.user?.first_name} {activity.user?.last_name || activity.user?.username || activity.user?.email || 'Unknown'}</span>' {activity.action} {activity.resource} from {activity.ip_address}
                 </span>
-                <span className="text-sm text-gray-500">{new Date(activity.createdAt).toLocaleString()}</span>
+                <span className="text-sm text-gray-500">{new Date(activity.created_at).toLocaleString()}</span>
               </li>
             ))}
           </ul>
